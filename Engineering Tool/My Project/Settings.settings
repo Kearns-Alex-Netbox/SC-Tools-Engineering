@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="My" GeneratedClassName="MySettings" UseMySettingsClassName="true">
+  <Profiles />
+  <Settings>
+    <Setting Name="ReleaseLocation" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\Server1\EngineeringReleased</Value>
+    </Setting>
+    <Setting Name="DatabasePath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\Accounting</Value>
+    </Setting>
+    <Setting Name="RemindMe" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="BOMFilePath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\Server1</Value>
+    </Setting>
+    <Setting Name="SourceFolderPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\server1\shares</Value>
+    </Setting>
+    <Setting Name="DestinationFolderPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\server1\shares</Value>
+    </Setting>
+    <Setting Name="RevisionFile" Type="System.String" Scope="User">
+      <Value Profile="(Default)">\\Server1</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
