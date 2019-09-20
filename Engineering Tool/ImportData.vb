@@ -82,10 +82,50 @@ Public Class ImportData
 	End Sub
 
 	Private Sub Import()
+
+		Dim answer As DialogResult
+
+		'This check allows the user to reset the flag that tells us if an import is going on. This way if the program crashes, we have a way to recover.
+		Dim message As String = ""
+		If sqlapi.CheckDirtyBit(message) = True Then
+			answer = MessageBox.Show(message & vbNewLine & "Would you like to reset the flag??", "Reset?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
+			If answer = Windows.Forms.DialogResult.Yes Then
+				sqlapi.SetDirtyBit(0)
+			End If
+			Return
+		End If
+
+		'This is a safegaurd agaisnt any kind of accidental imports. The user needs to verify that they want to continue.
+		
+		answer = MessageBox.Show("Are you sure you want to start importing data?", "Continue?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
+		If answer = Windows.Forms.DialogResult.No Then
+			Return
+		End If
+
 		skipQB = False
+
+		'Dim stopwatch As Stopwatch = Stopwatch.StartNew()
 
 		'Clear our textbox to start with a clean slate.
 		RTB_Results.Clear()
+
+		Try
+			UpdateRTB("Opening QB Connection . . ." & vbNewLine)
+
+			_cn.Open()
+
+			UpdateRTB("Connected!" & vbNewLine & vbNewLine)
+		Catch ex As Exception
+			answer = MessageBox.Show("Could not connect to QB. Continue anyways?", "Continue?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
+			If answer = Windows.Forms.DialogResult.No Then
+				UpdateRTB("Could not connect and canceled." & vbNewLine)
+				Return
+			End If
+
+			UpdateRTB("Could not connect." & vbNewLine & vbNewLine)
+			skipQB = True
+		End Try
+		'stopwatch.Stop()
 
 		'Check to see if the directory exists.
 		Dim missingDirectory As String = ""
@@ -111,42 +151,6 @@ Public Class ImportData
 			Return
 		End If
 
-		'This is a safegaurd agaisnt any kind of accidental imports. The user needs to verify that they want to continue.
-		Dim answer As DialogResult
-		answer = MessageBox.Show("Are you sure you want to start importing data?", "Continue?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
-		If answer = Windows.Forms.DialogResult.No Then
-			Return
-		End If
-
-		'This check allows the user to reset the flag that tells us if an import is going on. This way if the program crashes, we have a way to recover.
-		Dim message As String = ""
-		If sqlapi.CheckDirtyBit(message) = True Then
-			answer = MessageBox.Show(message & vbNewLine & "Would you like to reset the flag??", "Reset?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
-			If answer = Windows.Forms.DialogResult.Yes Then
-				sqlapi.SetDirtyBit(0)
-			End If
-			Return
-		End If
-
-		'Dim stopwatch As Stopwatch = Stopwatch.StartNew()
-
-		Try
-			RTB_Results.Text &= "Opening Connection . . ." & vbNewLine
-			RefreshAndScroll()
-
-			_cn.Open()
-
-			RTB_Results.Text &= "Connected!" & vbNewLine
-			RefreshAndScroll()
-		Catch ex As Exception
-			answer = MessageBox.Show("Could not connect to QB. Continue anyways?", "Continue?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
-			If answer = Windows.Forms.DialogResult.No Then
-				Return
-			End If
-			skipQB = True
-		End Try
-		'stopwatch.Stop()
-
 		Dim cmd As New OdbcCommand(ODBC_LastModifiedQuery, _cn)
 
 		Dim myCmd = New SqlCommand("SELECT [" & DB_HEADER_VALUE & "] FROM " & TABLE_UTILITIES & " WHERE [" & DB_HEADER_NAME & "] = 'LastUpdate'", myConn)
@@ -171,12 +175,11 @@ Public Class ImportData
 			QBitemsMajor = False
 			QBitemsMinor = False
 
-			'RTB_Results.Text = RTB_Results.Text & "Connection = " & stopwatch.Elapsed.ToString & vbNewLine
-			'RefreshAndScroll()
+			'UpdateRTB("Connection = " & stopwatch.Elapsed.ToString & vbNewLine)
 
 			Dim result As String = ""
 			If sqlapi.ClearDatabase(myCmd, result, skipQB, CkB_ALPHAitems.Checked) = False Then
-				RTB_Results.Text = result
+				UpdateRTB(result & vbNewLine)
 				Return
 			End If
 
@@ -264,7 +267,7 @@ Public Class ImportData
 			sqlapi.SetDirtyBit(0)
 			Log("Import", "Success")
 		Catch ex As Exception
-			RTB_Results.Text = RTB_Results.Text & "ERROR ERROR ERROR ERROR: " & ex.Message & vbNewLine
+			UpdateRTB("ERROR ERROR ERROR ERROR: " & ex.Message & vbNewLine)
 			Log("Import", "ERROR: " & ex.Message)
 		End Try
 	End Sub
@@ -286,8 +289,6 @@ Public Class ImportData
 			'		<boardname>						There can be multiple board folders
 			'			Rev#.#						There can be multiple revision folders
 			'				files					Name format: <boardname>.Rev#.#.<option>.gen
-			'	ALPHAITEMS								~ This folder needs to be exact
-			'		files							Should contain a single component, magazine, and package file from the Pick and Place [.cmp][.mag][.gen]
 			'	PCAD									~ This folder needs to be exact
 			'		<boardname>						There can be multiple board folders
 			'			Rev#.#						There can be multiple revision folders
@@ -300,53 +301,46 @@ Public Class ImportData
 				'Find the folder names and go through them one by one.
 				Select Case dirInfo.Name
 					Case "ALPHABOM"
-						RTB_Results.Text = RTB_Results.Text & "Starting to import ALPHA BOM" & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("Starting to import SMT BOM" & vbNewLine)
+
 						GoThroughALPHABoards(dir)
-						RTB_Results.Text = RTB_Results.Text & "Finished importing ALPHA BOM" & vbNewLine
-						RTB_Results.Text = RTB_Results.Text & vbNewLine
-						RefreshAndScroll()
-					Case "ALPHAITEMS"
-						'Check to see if we are going to import the alpha files
-						If CkB_ALPHAitems.Checked = True Then
-							RTB_Results.Text = RTB_Results.Text & "Starting to import ALPHA Items" & vbNewLine
-							RefreshAndScroll()
-							GoThroughALPHAItems(dir)
-							RTB_Results.Text = RTB_Results.Text & "Finished importing ALPHA Items" & vbNewLine
-							RTB_Results.Text = RTB_Results.Text & vbNewLine
-							RefreshAndScroll()
-						Else
-							RTB_Results.Text = RTB_Results.Text & "Skipping The import of ALPHA Items" & vbNewLine & vbNewLine
-							RefreshAndScroll()
-						End If
+
+						UpdateRTB("Finished importing SMT BOM" & vbNewLine & vbNewLine)
 					Case "PCAD"
-						RTB_Results.Text = RTB_Results.Text & "Starting to import PCAD BOM" & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("Starting to import PCAD BOM" & vbNewLine)
+
 						GoThroughImportPCADBoards(dir)
-						RTB_Results.Text = RTB_Results.Text & "Finished importing PCAD BOM" & vbNewLine
-						RTB_Results.Text = RTB_Results.Text & vbNewLine
-						RefreshAndScroll()
+
+						UpdateRTB("Finished importing PCAD BOM" & vbNewLine & vbNewLine)
 				End Select
 			Next
 
-			If skipQB = False Then
-					RTB_Results.Text = RTB_Results.Text & "Starting to import QB Items" & vbNewLine
-					RefreshAndScroll()
-					ImportQBItems()
-					RTB_Results.Text = RTB_Results.Text & "Finished importing QB Items" & vbNewLine
-					RTB_Results.Text = RTB_Results.Text & vbNewLine
-					RefreshAndScroll()
+			'Check to see if we are going to import the alpha files
+			If CkB_ALPHAitems.Checked = True Then
+				UpdateRTB("Starting to import SMT Items" & vbNewLine)
 
-					'Import the QB BOMs
-					RTB_Results.Text = RTB_Results.Text & "Starting to import QB BOMs" & vbNewLine
-					RefreshAndScroll()
-					ImportQBBOMS()
-					RTB_Results.Text = RTB_Results.Text & "Finished importing QB BOMs" & vbNewLine
-					RTB_Results.Text = RTB_Results.Text & vbNewLine
-					RefreshAndScroll()
+				GoThroughALPHAItems()
+
+				UpdateRTB("Finished importing SMT Items" & vbNewLine & vbNewLine)
 			Else
-				RTB_Results.Text = RTB_Results.Text & "Skipping the import of QB Items and BOMs" & vbNewLine
-				RefreshAndScroll()
+				UpdateRTB("Skipping The import of SMT Items" & vbNewLine & vbNewLine)
+			End If
+
+			If skipQB = False Then
+				UpdateRTB("Starting to import QB Items" & vbNewLine)
+
+				ImportQBItems()
+
+				UpdateRTB("Finished importing QB Items" & vbNewLine & vbNewLine)
+
+				'Import the QB BOMs
+				UpdateRTB("Starting to import QB BOMs" & vbNewLine)
+
+				ImportQBBOMS()
+
+				UpdateRTB("Finished importing QB BOMs" & vbNewLine & vbNewLine)
+			Else
+				UpdateRTB("Skipping the import of QB Items and BOMs" & vbNewLine)
 			End If
 
 		Catch ex As Exception
@@ -354,7 +348,7 @@ Public Class ImportData
 		End Try
 	End Sub
 
-#Region "IMPORT ALPHA BOM"
+#Region "IMPORT SMT BOM"
 	Private Sub GoThroughALPHABoards(ByRef FolderDirectiory As String)
 		'Go through each 'Board' Folder.
 		For Each dir As String In Directory.GetDirectories(FolderDirectiory)
@@ -376,7 +370,7 @@ Public Class ImportData
 		'Grab all of the files in the folder and check to see if we have any
 		Dim files() As String = Directory.GetFiles(FolderDirectory, ALPHA_EXE)
 		If files.Length = 0 Then
-			RTB_Results.Text = RTB_Results.Text & "    No Files for: " & FolderDirectory & vbNewLine
+			UpdateRTB("    No Files for: " & FolderDirectory & vbNewLine)
 			ALPHAminor = True
 			Return
 		End If
@@ -390,14 +384,14 @@ Public Class ImportData
 			'Check to see if the File is larger than 0 in size.
 			If fileInformation.Length = 0 Then
 				ALPHAminor = True
-				RTB_Results.Text = RTB_Results.Text & "    FAILED to import " & fileInformation.Name & " File size is 0" & vbNewLine
+				UpdateRTB("    FAILED to import " & fileInformation.Name & " File size is 0" & vbNewLine)
 				Continue For
 			End If
 
 			'check to see if the file has the right number of 'parts' in the name. If not, add error and move on to the next file.
 			If fileNameParsed.Length < 4 Then
 				ALPHAmajor = True
-				RTB_Results.Text = RTB_Results.Text & "    FAILED to import " & fileInformation.Name & " Check name format" & vbNewLine
+				UpdateRTB("    FAILED to import " & fileInformation.Name & " Check name format" & vbNewLine)
 				Continue For
 			End If
 
@@ -406,14 +400,14 @@ Public Class ImportData
 
 			If ImportALPHAFile(dataFile, fileName, errorMessage) = False Then
 				ALPHAmajor = True
-				RTB_Results.Text = RTB_Results.Text & "    FAILED to import " & fileName & vbNewLine
+				UpdateRTB("    FAILED to import " & fileName & vbNewLine)
 				For Each errorItem In errorMessage
-					RTB_Results.Text = RTB_Results.Text & "        " & errorItem & vbNewLine
+					UpdateRTB("        " & errorItem & vbNewLine)
 				Next
 			Else
-				RTB_Results.Text = RTB_Results.Text & "    Imported: " & fileName & vbNewLine
+				UpdateRTB("    Imported: " & fileName & vbNewLine)
 			End If
-			RefreshAndScroll()
+			
 		Next
 	End Sub
 
@@ -439,7 +433,7 @@ Public Class ImportData
 
 		'Start our transaction. Must assign both transaction object and connection to the command object for a pending local transaction.
 		Dim transaction As SqlTransaction = Nothing
-		transaction = myConn.BeginTransaction("ALPHA Transaction")
+		transaction = myConn.BeginTransaction("SMT Transaction")
 		myCmd.Connection = myConn
 		myCmd.Transaction = transaction
 
@@ -514,51 +508,51 @@ Public Class ImportData
 	End Function
 #End Region
 
-#Region "IMPORT ALPHA ITEMS"
-	Private Sub GoThroughALPHAItems(ByRef folderDirectory As String)
-		Dim filePath() As String = Directory.GetFiles(folderDirectory)
-		Dim result As String = ""
+#Region "IMPORT SMT ITEMS"
+	Private Sub GoThroughALPHAItems()
+		ImportSMTmagazines()
 
-		'Go through each file. There are three different files and each one needs to be handled differently.
-		For Each dataFile As String In Directory.GetFiles(folderDirectory)
-			Dim fileInformation As New FileInfo(dataFile)
+		ImportSMTItems()
 
-			If fileInformation.Name.Contains("mag.mag") = True Then
-				'This is a magazine file.
-				If ImportALPHAmagazine(folderDirectory, fileInformation.Name, result) = True Then
-					RTB_Results.Text = RTB_Results.Text & "    Imported: ALPHA Magazine" & vbNewLine
-				Else
-					RTB_Results.Text = RTB_Results.Text & "    FAILED to import ALPHA Magazine" & vbNewLine
-					RTB_Results.Text = RTB_Results.Text & "       " & result & vbNewLine
-					ALPHAitemsMajor = True
-				End If
-			ElseIf fileInformation.Name.Contains("cmp.cmp") = True Then
-				'This is a component file.
-				If ImportALPHAItems(folderDirectory, fileInformation.Name, result) = True Then
-					RTB_Results.Text = RTB_Results.Text & vbNewLine & "    Imported: ALPHA Components" & vbNewLine
-				Else
-					RTB_Results.Text = RTB_Results.Text & "    FAILED to import ALPHA Components" & vbNewLine
-					RTB_Results.Text = RTB_Results.Text & "       " & result & vbNewLine
-					ALPHAitemsMajor = True
-				End If
-			ElseIf fileInformation.Name.Contains("pck.gen") = True Then
-				'This is a package file.
-				If ImportALPHAPackage(folderDirectory, fileInformation.Name, result) = True Then
-					RTB_Results.Text = RTB_Results.Text & vbNewLine & "    Imported: ALPHA Package" & vbNewLine
-				Else
-					RTB_Results.Text = RTB_Results.Text & "    FAILED to import ALPHA Package" & vbNewLine
-					RTB_Results.Text = RTB_Results.Text & "       " & result & vbNewLine
-					ALPHAitemsMajor = True
-				End If
-			Else
-				RTB_Results.Text = RTB_Results.Text & "    Extra File found: " & fileInformation.Name & vbNewLine
-				ALPHAitemsMinor = True
-			End If
-			RefreshAndScroll()
-		Next
+		ImportSMTPackages()
 	End Sub
 
-	Public Function ImportALPHAmagazine(ByRef fileDirectory As String, ByRef fileName As String, ByRef result As String) As Boolean
+	Public Sub ImportSMTMagazines()
+		UpdateRTB("Starting to import SMT Magazines [" & AlphaItemslocation & "]" & vbNewLine)
+
+		' check for only one file in the location
+		Dim fileEntries As String() = Directory.GetFiles(AlphaItemslocation & "Alex's Test\", "*.mag")
+		Dim results As String = ""
+
+		If fileEntries.Count = 0 Then
+			UpdateRTB("    No .mag file found. Skipping Import" & vbNewLine & vbNewLine)
+
+			ALPHAitemsMajor = True
+			Return
+		End If
+
+		Dim isFirst As Boolean = True
+
+		' go through each mag file that we have
+		For Each filepath In fileEntries
+			Dim fileinfo As New FileInfo(filepath)
+			UpdateRTB("    " & fileinfo.Name & " ")
+
+			ImportSMTMagazine(filepath, isFirst, results, True)
+
+			If results.Length <> 0 Then
+				UpdateRTB("Error:" & vbNewLine & "    " & results)
+			Else
+				UpdateRTB("O.K." & vbNewLine)
+			End If
+
+			isFirst = False
+		Next
+
+		UpdateRTB("Finished importing SMT Magazines" & vbNewLine & vbNewLine)
+	End Sub
+
+	Public Function ImportSMTMagazine(ByVal filePath As String, ByRef isFirst As Boolean, ByRef result As String, Optional updateUI As Boolean = False) As Boolean
 		Dim line As String = ""
 		Dim prefix As String = ""
 
@@ -568,6 +562,7 @@ Public Class ImportData
 
 		'M15 Parse
 		Dim machinenumber As String = ""
+		Dim machineString As String = ""
 		Dim slotNumber As Integer = 0
 
 		'M21 Parse
@@ -578,14 +573,29 @@ Public Class ImportData
 
 		Dim transaction As SqlTransaction = Nothing
 
+		Dim isDeleted As Boolean = False
+
 		transaction = myConn.BeginTransaction("Magazine Transaction")
 		myCmd.Connection = myConn
 		myCmd.Transaction = transaction
 
-		Dim sr As New StreamReader(fileDirectory & "\" & fileName)
+		Dim totalLines As Integer = File.ReadAllLines(filePath).Length
+		Dim sr As New StreamReader(filePath)
+		
 
 		Try
+			Dim itemcount As Integer = 0
+			Dim periodCount As Integer = 0
 			While Not sr.EndOfStream
+				itemcount += 1
+
+				If itemcount >= (totalLines \ 20) and periodCount <> 20 Then
+					'The purpose of this is to let the user know that we are still adding items and the progam is not crashed.
+					UpdateRTB(". ")
+					itemcount = 0
+					periodCount +=1
+				End If
+
 				line = sr.ReadLine
 				If line.Length <> 1 Then
 					prefix = line.Substring(0, line.IndexOf(" "))
@@ -607,13 +617,40 @@ Public Class ImportData
 
 						name = line.Substring(GetNthIndex(line, """", 1) + 1, GetNthIndex(line, """", 2) - GetNthIndex(line, """", 1) - 1)
 						serialNumber = line.Substring(GetNthIndex(line, " ", 2) + 1, GetNthIndex(line, " ", 3) - GetNthIndex(line, " ", 2) - 1)
+						isDeleted = False
+
 					Case "M15"
 						'M15 0 -1
 
-						machinenumber = line.Substring(GetNthIndex(line, " ", 1) + 1, GetNthIndex(line, " ", 2) - GetNthIndex(line, " ", 1) - 1)
+						machinenumber = CInt(line.Substring(GetNthIndex(line, " ", 1) + 1, GetNthIndex(line, " ", 2) - GetNthIndex(line, " ", 1) - 1))
 						slotNumber = CInt(line.Substring(GetNthIndex(line, " ", 2) + 1)) + 1
+
+						Select machinenumber
+						    Case NOTLOADED_NUM
+								machineString = NOTLOADED
+
+							Case ALPHA_NUM
+								machineString = ALPHA
+
+							Case GAMMA_NUM
+								machineString = GAMMA
+
+						End Select
 					Case "M21"
 						'M21 1 false 8mmtape [90000 -1 "SMT 330R1206-5" ""]
+
+						' check to see if we are not on the first file anymore.
+						If isFirst = False And machinenumber = NOTLOADED_NUM Then
+							' if we are not the first file, we only want to update what is loaded in a machine.
+							Continue While
+						End If
+
+						If isFirst = False And isDeleted = False Then
+							' if we are not on the first file and we have a machine number, we need to clear any existing data with the magazine
+							myCmd.CommandText = "DELETE FROM " & TABLE_MAGAZINE_DATA & " WHERE " & DB_HEADER_NAME & " = '" & name & "'"
+							myCmd.ExecuteNonQuery()
+							isDeleted = True
+						End If
 
 						feederNumber = CInt(line.Substring(GetNthIndex(line, " ", 1) + 1, GetNthIndex(line, " ", 2) - GetNthIndex(line, " ", 1) - 1)) + 1
 						Try
@@ -621,12 +658,12 @@ Public Class ImportData
 							quantity = line.Substring(GetNthIndex(line, " ", 5) + 1, GetNthIndex(line, " ", 6) - GetNthIndex(line, " ", 5) - 1)
 							stockNumber = line.Substring(GetNthIndex(line, """", 1) + 1, GetNthIndex(line, """", 2) - GetNthIndex(line, """", 1) - 1)
 							myCmd.CommandText = "INSERT INTO " & TABLE_MAGAZINE_DATA & " ([" & DB_HEADER_SERIAL_NUMBER & "], [" & DB_HEADER_NAME & "], [" & DB_HEADER_MACHINE_NUMBER & "], [" & DB_HEADER_SLOT_NUMBER & "], [" & DB_HEADER_FEEDER_NUMBER & "], [" & DB_HEADER_ANGLE & "], [" & DB_HEADER_QUANTITY & "], [" & DB_HEADER_ITEM_NUMBER & "]) " &
-												"VALUES('" & serialNumber & "', '" & name & "', '" & machinenumber & "', " & slotNumber & ", " & feederNumber & ", " & angle & ", " & quantity & ", '" & stockNumber & "')"
+												"VALUES('" & serialNumber & "', '" & name & "', '" & machineString & "', " & slotNumber & ", " & feederNumber & ", " & angle & ", " & quantity & ", '" & stockNumber & "')"
 							myCmd.ExecuteNonQuery()
 						Catch ex As Exception
 							'The only time that we make it here is if the line does not give us this [extra information]. They are not required for the machine file.
 							myCmd.CommandText = "INSERT INTO " & TABLE_MAGAZINE_DATA & " ([" & DB_HEADER_SERIAL_NUMBER & "], [" & DB_HEADER_NAME & "], [" & DB_HEADER_MACHINE_NUMBER & "], [" & DB_HEADER_SLOT_NUMBER & "], [" & DB_HEADER_FEEDER_NUMBER & "]) " &
-												"VALUES('" & serialNumber & "', '" & name & "', '" & machinenumber & "', " & slotNumber & ", " & feederNumber & ")"
+												"VALUES('" & serialNumber & "', '" & name & "', '" & machineString & "', " & slotNumber & ", " & feederNumber & ")"
 							myCmd.ExecuteNonQuery()
 						End Try
 				End Select
@@ -637,10 +674,39 @@ Public Class ImportData
 			result = ex.Message
 			Return False
 		End Try
+
 		Return True
 	End Function
 
-	Private Function ImportALPHAItems(ByRef fileDirectory As String, ByRef fileName As String, ByRef result As String) As Boolean
+	Private Sub ImportSMTItems()
+		UpdateRTB("Starting to import SMT Items [" & AlphaItemslocation & "]" & vbNewLine)
+
+		' check for only one file in the location
+		Dim fileEntries As String() = Directory.GetFiles(AlphaItemslocation & "Alex's Test\", "*.cmp")
+		Dim results As String = ""
+
+		If fileEntries.Count = 0 Then
+			UpdateRTB("    No .cmp file found. Skipping Import" & vbNewLine & vbNewLine)
+
+			ALPHAitemsMajor = True
+			Return
+		ElseIf 1 < fileEntries.Count then	
+			UpdateRTB("    More than 1 .cmp file found. Skipping Import" & vbNewLine & vbNewLine)
+
+			ALPHAitemsMajor = True
+			Return
+		End If
+
+		ImportSMTItem(fileEntries(0), results)
+
+		If results.Length <> 0 Then
+			UpdateRTB(results & vbNewLine)
+		End If
+
+		UpdateRTB("Finished importing SMT Items" & vbNewLine & vbNewLine)
+	End Sub
+
+	Public Function ImportSMTItem(ByVal filePath As String, ByRef results As String) As Boolean
 		Dim line As String = ""
 		Dim prefix As String = ""
 
@@ -667,19 +733,24 @@ Public Class ImportData
 		myCmd.Connection = myConn
 		myCmd.Transaction = transaction
 
-		Dim sr As New StreamReader(fileDirectory & "\" & fileName)
+		Dim totalLines As Integer = File.ReadAllLines(filePath).Length
+		Dim sr As New StreamReader(filePath)
+
+		UpdateRTB("    ")
 
 		Try
 			Dim itemcount As Integer = 0
+			Dim periodCount As Integer = 0
 			While Not sr.EndOfStream
-				If itemcount > 800 Then
-					'The purpose of this is to let the user know that we are still adding items and the progam is not crashed.
-					RTB_Results.Text = RTB_Results.Text & ". "
-					RefreshAndScroll()
-					itemcount = 0
-				End If
-
 				itemcount += 1
+
+				If itemcount >= (totalLines \ 20) and periodCount <> 20 Then
+					'The purpose of this is to let the user know that we are still adding items and the progam is not crashed.
+					UpdateRTB(". ")
+					itemcount = 0
+					periodCount +=1
+				End If
+				
 				line = sr.ReadLine
 
 				If line.Length <> 1 Then
@@ -742,14 +813,43 @@ Public Class ImportData
 			transaction.Commit()
 		Catch ex As Exception
 			sqlapi.RollBack(transaction, errorMessage:=New List(Of String))
-			result = ex.Message
+			results = ex.Message
 			Return False
 		End Try
 
+		UpdateRTB("O.K." & vbNewLine)
 		Return True
 	End Function
 
-	Private Function ImportALPHAPackage(ByRef fileDirectory As String, ByRef fileName As String, ByRef result As String) As Boolean
+	Private Sub ImportSMTPackages()
+		UpdateRTB("Starting to import SMT Packages [" & AlphaItemslocation & "]" & vbNewLine)
+
+		' check for only one file in the location
+		Dim fileEntries As String() = Directory.GetFiles(AlphaItemslocation, "pck.gen")
+		Dim results As String = ""
+
+		If fileEntries.Count = 0 Then
+			UpdateRTB("    No pck.gen file found. Skipping Import" & vbNewLine & vbNewLine)
+
+			ALPHAitemsMajor = True
+			Return
+		ElseIf 1 < fileEntries.Count then	
+			UpdateRTB("    More than 1 pck.gen file found. Skipping Import" & vbNewLine & vbNewLine)
+
+			ALPHAitemsMajor = True
+			Return
+		End If
+
+		ImportSMTPackage(fileEntries(0), results)
+
+		If results.Length <> 0 Then
+			UpdateRTB(results & vbNewLine)
+		End If
+
+		UpdateRTB("Finished importing SMT Packages" & vbNewLine & vbNewLine)
+	End Sub
+
+	Public Function ImportSMTPackage(ByVal filePath As String, ByRef results As String) As Boolean
 		Dim line As String = ""
 		Dim prefix As String = ""
 		Dim parseSet As Integer = 1
@@ -784,17 +884,23 @@ Public Class ImportData
 		myCmd.Connection = myConn
 		myCmd.Transaction = transaction
 
-		Dim sr As New StreamReader(fileDirectory & "\" & fileName)
+		Dim totalLines As Integer = File.ReadAllLines(filePath).Length
+		Dim sr As New StreamReader(filePath)
+		UpdateRTB("    ")
 
 		Try
 			Dim itemcount As Integer = 0
+			Dim periodCount As Integer = 0
 			While Not sr.EndOfStream
-				If itemcount > 1300 Then
-					RTB_Results.Text = RTB_Results.Text & ". "
-					RefreshAndScroll()
-					itemcount = 0
-				End If
 				itemcount += 1
+
+				If itemcount >= (totalLines \ 20) and periodCount <> 20 Then
+					'The purpose of this is to let the user know that we are still adding items and the progam is not crashed.
+					UpdateRTB(". ")
+					itemcount = 0
+					periodCount +=1
+				End If
+				
 				line = sr.ReadLine
 				If line.Length <> 1 Then
 					prefix = line.Substring(0, line.IndexOf(" "))
@@ -864,12 +970,14 @@ Public Class ImportData
 			transaction.Commit()
 		Catch ex As Exception
 			sqlapi.RollBack(transaction, errorMessage:=New List(Of String))
-			result = ex.Message
+			results = ex.Message
 			Return False
 		End Try
 
+		UpdateRTB("O.K." & vbNewLine)
 		Return True
 	End Function
+
 #End Region
 
 #Region "IMPORT PCAD BOM"
@@ -892,15 +1000,14 @@ Public Class ImportData
 
 				'Check to see if this revision folder is 'Release Ready'.
 				If CheckforRelease(dir, missingFiles, needsPNP) = False Then
-					RTB_Results.Text = RTB_Results.Text & "        NOT RELEASE READY" & vbNewLine
+					UpdateRTB("        NOT RELEASE READY" & vbNewLine)
 					For Each item In missingFiles
-						RTB_Results.Text = RTB_Results.Text & "            " & item & vbNewLine
+						UpdateRTB("            " & item & vbNewLine)
 					Next
 					PCADminor = True
 				Else
-					RTB_Results.Text = RTB_Results.Text & "        Release Ready" & vbNewLine
+					UpdateRTB("        Release Ready" & vbNewLine)
 				End If
-				RefreshAndScroll()
 			End If
 		Next
 	End Sub
@@ -909,7 +1016,7 @@ Public Class ImportData
 		'Check to see if we have any files in the directory to import.
 		Dim files() As String = Directory.GetFiles(dir, PCAD_EXE)
 		If files.Length = 0 Then
-			RTB_Results.Text = RTB_Results.Text & "    No Files for: " & dir & vbNewLine
+			UpdateRTB("    No Files for: " & dir & vbNewLine)
 			PCADminor = True
 			Return False
 		End If
@@ -923,7 +1030,7 @@ Public Class ImportData
 			'check to see if the file has the right number of 'parts' in the name. If not, add error and move on to the next file.
 			If fileNameParsed.Length < 4 Then
 				PCADmajor = True
-				RTB_Results.Text = RTB_Results.Text & "    FAILED to import " & fileInformation.Name & " Check name format" & vbNewLine
+				UpdateRTB("    FAILED to import " & fileInformation.Name & " Check name format" & vbNewLine)
 				Continue For
 			End If
 
@@ -932,21 +1039,20 @@ Public Class ImportData
 
 			If ImportPCADFile(dataFile, fileName, errorMessage) = False Then
 				PCADmajor = True
-				RTB_Results.Text = RTB_Results.Text & "    FAILED to import " & fileName & vbNewLine
+				UpdateRTB("    FAILED to import " & fileName & vbNewLine)
 				For Each errorItem In errorMessage
-					RTB_Results.Text = RTB_Results.Text & "        " & errorItem & vbNewLine
+					UpdateRTB("        " & errorItem & vbNewLine)
 				Next
 			Else
 				If errorMessage.Count <> 0 Then
-					RTB_Results.Text = RTB_Results.Text & "    " & fileName & " was imported with minor errors:" & vbNewLine
+					UpdateRTB("    " & fileName & " was imported with minor errors:" & vbNewLine)
 					For Each errorItem In errorMessage
-						RTB_Results.Text = RTB_Results.Text & "        " & errorItem & vbNewLine
+						UpdateRTB("        " & errorItem & vbNewLine)
 					Next
 				Else
-					RTB_Results.Text = RTB_Results.Text & "    Imported: " & fileName & vbNewLine
+					UpdateRTB("    Imported: " & fileName & vbNewLine)
 				End If
 			End If
-			RefreshAndScroll()
 		Next
 
 		Return True
@@ -1596,8 +1702,7 @@ Public Class ImportData
 			'Dim stopwatch As Stopwatch = Stopwatch.StartNew()
 			myTable.Load(cmd.ExecuteReader())
 			'stopwatch.Stop()
-			'RTB_Results.Text = RTB_Results.Text & "QB Items query = " & stopwatch.Elapsed.ToString & vbNewLine
-			RefreshAndScroll()
+			'UpdateRTB("QB Items query = " & stopwatch.Elapsed.ToString & vbNewLine)
 
 			'Start our transaction. Must assign both transaction object and connection to the command object for a pending local transaction.
 			Dim transaction As SqlTransaction = Nothing
@@ -1623,16 +1728,14 @@ Public Class ImportData
 					End If
 					'Check to see if we have a description or not.
 					If description_Value.Length = 0 Then
-						RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " does not have a Description." & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("       " & item_Number & " does not have a Description." & vbNewLine)
 						QBitemsMinor = True
 					End If
 
 					Dim quantity_Value As Decimal = Nothing
 					'Check to see if we have a quantity.
 					If row(DB_HEADER_QUANTITY).ToString.Length = 0 Then
-						RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " does not have a Quantity." & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("       " & item_Number & " does not have a Quantity." & vbNewLine)
 						QBitemsMinor = True
 						quantity_Value = 0.0
 					Else
@@ -1642,8 +1745,7 @@ Public Class ImportData
 					Dim cost_Value As Decimal = Nothing
 					'Check to see if we have a cost.
 					If row(DB_HEADER_COST).ToString.Length = 0 Then
-						RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " does not have a Cost." & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("       " & item_Number & " does not have a Cost." & vbNewLine)
 						QBitemsMinor = True
 						cost_Value = 0.0
 					Else
@@ -1655,8 +1757,7 @@ Public Class ImportData
 					If preferredVendor_Value.Length = 0 Then
 						'Check to see if we are using anything that does not need to have a Preferred Vendor.
 						If type.ToLower.Contains("assembly") = False Then
-							RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " does not have a Prefered Vendor." & vbNewLine
-							RefreshAndScroll()
+							UpdateRTB("       " & item_Number & " does not have a Prefered Vendor." & vbNewLine)
 							QBitemsMinor = True
 						End If
 					End If
@@ -1666,8 +1767,7 @@ Public Class ImportData
 					If partNumber_Value.Length = 0 Then
 						'Check to see if we are using anything that does not need to have a Manufacturer Part Number.
 						If type.ToLower.Contains("assembly") = False Then
-							RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " does not have a Manufacturer Part Number." & vbNewLine
-							RefreshAndScroll()
+							UpdateRTB("       " & item_Number & " does not have a Manufacturer Part Number." & vbNewLine)
 							QBitemsMinor = True
 						End If
 					End If
@@ -1688,22 +1788,19 @@ Public Class ImportData
 										"VALUES('" & type & "', '" & item_Prefix & "', '" & item_Number & "', '" & description_Value & "', " & quantity_Value & ", " & cost_Value & ", '" & preferredVendor_Value & "', '" & partNumber_Value & "', '" & manufacturer2_Value & "', '" & partNumber2_Value & "', '" & manufacturer3_Value & "', '" & partNumber3_Value & "', '" & leadTime_Value & "', '" & minOrderQty_Value & "', '" & reOrderQty_Value & "')"
 					myCmd.ExecuteNonQuery()
 
-					RTB_Results.Text &= "    Imported: " & item_Prefix & ":" & item_Number & vbNewLine
-					RefreshAndScroll()
+					UpdateRTB("    Imported: " & item_Prefix & ":" & item_Number & vbNewLine)
 				Next
 
 				transaction.Commit()
 			Catch ex As Exception
-				RTB_Results.Text = RTB_Results.Text & "       " & ex.Message & vbNewLine
-				RefreshAndScroll()
+				UpdateRTB("       " & ex.Message & vbNewLine)
 				If Not transaction Is Nothing Then
 					sqlapi.RollBack(transaction, errorMessage:=New List(Of String))
 				End If
 				QBitemsMajor = True
 			End Try
 		Catch ex As Exception
-			RTB_Results.Text = RTB_Results.Text & "       " & ex.Message & vbNewLine
-			RefreshAndScroll()
+			UpdateRTB("       " & ex.Message & vbNewLine)
 			_cn.Close()
 			QBitemsMajor = True
 		End Try
@@ -1728,10 +1825,12 @@ Public Class ImportData
 			errorTable.Load(cmd.ExecuteReader)
 
 			If errorTable.Rows.Count <> 0 Then
-				RTB_Results.Text = RTB_Results.Text & "       " & "These Items all need to be part of a subset before we can import." & vbNewLine
+				UpdateRTB("       " & "These Items all need to be part of a subset before we can import." & vbNewLine)
+
 				For Each row In errorTable.Rows
-					RTB_Results.Text = RTB_Results.Text & "              " & row(DB_HEADER_ITEM_NUMBER).ToString & vbNewLine
+					UpdateRTB("              " & row(DB_HEADER_ITEM_NUMBER).ToString & vbNewLine)
 				Next
+
 				syntaxerror = True
 			End If
 
@@ -1747,10 +1846,12 @@ Public Class ImportData
 			errorTable.Load(cmd.ExecuteReader)
 
 			If errorTable.Rows.Count <> 0 Then
-				RTB_Results.Text = RTB_Results.Text & "       " & "These Assmblies all need to be part of a subset before we can import." & vbNewLine
+				UpdateRTB("       " & "These Assmblies all need to be part of a subset before we can import." & vbNewLine)
+
 				For Each row In errorTable.Rows
-					RTB_Results.Text = RTB_Results.Text & "              " & row(DB_HEADER_NAME).ToString & vbNewLine
+					UpdateRTB("              " & row(DB_HEADER_NAME).ToString & vbNewLine)
 				Next
+
 				syntaxerror = True
 			End If
 
@@ -1766,8 +1867,7 @@ Public Class ImportData
 			'Dim stopwatch As Stopwatch = Stopwatch.StartNew()
 			myTable.Load(cmd.ExecuteReader())
 			'stopwatch.Stop()
-			'RTB_Results.Text = RTB_Results.Text & "QB BOMs query = " & stopwatch.Elapsed.ToString & vbNewLine
-			RefreshAndScroll()
+			'UpdateRTB("QB BOMs query = " & stopwatch.Elapsed.ToString & vbNewLine)
 
 			Dim QBItemList As New DataTable()
 			myCmd.CommandText = "SELECT * FROM " & TABLE_QB_ITEMS
@@ -1817,8 +1917,7 @@ Public Class ImportData
 					If item_Prefix.ToUpper() = PREFIX_PCB = True Then
 						process = "PCB BOARD"
 					ElseIf process = "" then
-						RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " not associated with a process." & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("       " & item_Number & " not associated with a process." & vbNewLine)
 						QBminor = True
 						process = "???"
 					End If
@@ -1827,8 +1926,7 @@ Public Class ImportData
 					Dim drs() As DataRow = QBItemList.Select("[" & DB_HEADER_ITEM_NUMBER & "] = '" & item_Number & "'")
 
 					If drs.Length = 0 Then
-						RTB_Results.Text = RTB_Results.Text & "       " & item_Number & " was not imported as an item under " & name_Prefix & "-" & name & ". Check for active status and type." & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("       " & item_Number & " was not imported as an item under " & name_Prefix & "-" & name & ". Check for active status and type." & vbNewLine)
 						QBmajor = True
 						Continue For
 					End If
@@ -1841,23 +1939,20 @@ Public Class ImportData
 
 					If lastAssembly <> name_Prefix & ":" & name then
 						lastAssembly = name_Prefix & ":" & name
-						RTB_Results.Text &= "    Imported: " & lastAssembly & vbNewLine
-						RefreshAndScroll()
+						UpdateRTB("    Imported: " & lastAssembly & vbNewLine)
 					End If
 				Next
 
 				transaction.Commit()
 			Catch ex As Exception
-				RTB_Results.Text = RTB_Results.Text & "       " & ex.Message & vbNewLine
-				RefreshAndScroll()
+				UpdateRTB("       " & ex.Message & vbNewLine)
 				If Not transaction Is Nothing Then
 					sqlapi.RollBack(transaction, errorMessage:=New List(Of String))
 				End If
 				QBmajor = True
 			End Try
 		Catch ex As Exception
-			RTB_Results.Text = RTB_Results.Text & "       " & ex.Message & vbNewLine
-			RefreshAndScroll()
+			UpdateRTB("       " & ex.Message & vbNewLine)
 			_cn.Close()
 			QBmajor = True
 		End Try
@@ -1878,28 +1973,29 @@ Public Class ImportData
 		Return -1
 	End Function
 
-	Private Sub RefreshAndScroll()
-		RTB_Results.SelectionStart = RTB_Results.TextLength
-		RTB_Results.ScrollToCaret()
+	Private Sub UpdateRTB(byref text As String)
+		RTB_Results.Focus()
+
+		RTB_Results.AppendText(text)
 		RTB_Results.Refresh()
 	End Sub
 
 	Private Sub TB_ALPHAIndicatorLight_Click() Handles TB_ALPHAIndicatorLight.Click
-		If -1 < (RTB_Results.Find("Starting to import ALPHA BOM")) Then
-			RTB_Results.SelectionStart = RTB_Results.Find("Starting to import ALPHA BOM")
+		If -1 < (RTB_Results.Find("Starting to import SMT BOM")) Then
+			RTB_Results.SelectionStart = RTB_Results.Find("Starting to import SMT BOM")
 			RTB_Results.ScrollToCaret()
 		End If
 	End Sub
 
 	Private Sub TB_ALPHAitemsIndicatorLight_Click() Handles TB_ALPHAitemsIndicatorLight.Click
 		If CkB_ALPHAitems.Checked = True Then
-			If -1 < (RTB_Results.Find("Starting to import ALPHA Items")) Then
-				RTB_Results.SelectionStart = RTB_Results.Find("Starting to import ALPHA Items")
+			If -1 < (RTB_Results.Find("Starting to import SMT Items")) Then
+				RTB_Results.SelectionStart = RTB_Results.Find("Starting to import SMT Items")
 				RTB_Results.ScrollToCaret()
 			End If
 		Else
-			If -1 < (RTB_Results.Find("Skipping The import of ALPHA Items")) Then
-				RTB_Results.SelectionStart = RTB_Results.Find("Skipping The import of ALPHA Items")
+			If -1 < (RTB_Results.Find("Skipping The import of SMT Items")) Then
+				RTB_Results.SelectionStart = RTB_Results.Find("Skipping The import of SMT Items")
 				RTB_Results.ScrollToCaret()
 			End If
 		End If
@@ -1924,26 +2020,6 @@ Public Class ImportData
 			RTB_Results.SelectionStart = RTB_Results.Find("Starting to import QB Items")
 			RTB_Results.ScrollToCaret()
 		End If
-	End Sub
-
-	Private Sub TB_ALPHAIndicatorLight_Click(sender As Object, e As EventArgs)
-
-	End Sub
-
-	Private Sub TB_PCADIndicatorLight_Click(sender As Object, e As EventArgs)
-
-	End Sub
-
-	Private Sub TB_ALPHAitemsIndicatorLight_Click(sender As Object, e As EventArgs)
-
-	End Sub
-
-	Private Sub TB_QBIndicatorLight_Click(sender As Object, e As EventArgs)
-
-	End Sub
-
-	Private Sub TB_QBitemsIndicatorLight_Click(sender As Object, e As EventArgs)
-
 	End Sub
 #End Region
 

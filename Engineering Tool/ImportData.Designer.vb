@@ -49,13 +49,12 @@ Partial Class ImportData
 		'
 		'CkB_ALPHAitems
 		'
-		Me.CkB_ALPHAitems.AutoSize = true
 		Me.CkB_ALPHAitems.Font = New System.Drawing.Font("Microsoft Sans Serif", 12!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0,Byte))
 		Me.CkB_ALPHAitems.Location = New System.Drawing.Point(15, 69)
 		Me.CkB_ALPHAitems.Name = "CkB_ALPHAitems"
 		Me.CkB_ALPHAitems.Size = New System.Drawing.Size(131, 44)
 		Me.CkB_ALPHAitems.TabIndex = 39
-		Me.CkB_ALPHAitems.Text = "Import ALPHA"&Global.Microsoft.VisualBasic.ChrW(13)&Global.Microsoft.VisualBasic.ChrW(10)&"Items"
+		Me.CkB_ALPHAitems.Text = "Import SMT Items"
 		Me.CkB_ALPHAitems.UseVisualStyleBackColor = true
 		'
 		'RTB_Results
@@ -66,7 +65,7 @@ Partial Class ImportData
 		Me.RTB_Results.Font = New System.Drawing.Font("Consolas", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0,Byte))
 		Me.RTB_Results.Location = New System.Drawing.Point(151, 14)
 		Me.RTB_Results.Name = "RTB_Results"
-		Me.RTB_Results.Size = New System.Drawing.Size(622, 520)
+		Me.RTB_Results.Size = New System.Drawing.Size(622, 517)
 		Me.RTB_Results.TabIndex = 42
 		Me.RTB_Results.Text = ""
 		'
@@ -128,7 +127,7 @@ Partial Class ImportData
 		Me.TB_ALPHAIndicatorLight.ReadOnly = true
 		Me.TB_ALPHAIndicatorLight.Size = New System.Drawing.Size(118, 20)
 		Me.TB_ALPHAIndicatorLight.TabIndex = 43
-		Me.TB_ALPHAIndicatorLight.Text = "ALPHA BOM"
+		Me.TB_ALPHAIndicatorLight.Text = "SMT BOM"
 		Me.TB_ALPHAIndicatorLight.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
 		'
 		'TB_PCADIndicatorLight
@@ -156,7 +155,7 @@ Partial Class ImportData
 		Me.TB_ALPHAitemsIndicatorLight.ReadOnly = true
 		Me.TB_ALPHAitemsIndicatorLight.Size = New System.Drawing.Size(118, 20)
 		Me.TB_ALPHAitemsIndicatorLight.TabIndex = 44
-		Me.TB_ALPHAitemsIndicatorLight.Text = "ALPHA Items"
+		Me.TB_ALPHAitemsIndicatorLight.Text = "SMT Items"
 		Me.TB_ALPHAitemsIndicatorLight.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
 		'
 		'TB_QBIndicatorLight

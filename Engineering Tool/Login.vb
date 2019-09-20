@@ -30,6 +30,7 @@ Public Module Variables
 	Public Const DATABASE As String = "Production"      'Production = BOMCompare	Devel = BOMDevel
 	Public logLocation As String = "\\SERVER1\EngineeringReleased\Utilities\Compare Logs\"
 	'Public logLocation As String = "C:\dev\Compare Logs\"
+	Public AlphaItemslocation As String = "\\SERVER1\Production\AlphaBackup\"
 
 	Public myConn As SqlConnection
 	Public sqlapi As New SQL_API()
@@ -38,42 +39,42 @@ Public Module Variables
 
 	'Dilimiters
 	Public Const PERIOD_DILIMITER As String = "."
-	Public Const SPACE_DILIMITER As String = " "
-	Public Const COMMA_DILIMITER As String = ","
-	Public Const VLINE_DILIMITER As String = "|"
+	Public Const SPACE_DILIMITER  As String = " "
+	Public Const COMMA_DILIMITER  As String = ","
+	Public Const VLINE_DILIMITER  As String = "|"
 
 	'File Name parse index
-	Public Const INDEX_BOARD As Integer = 0
+	Public Const INDEX_BOARD     As Integer = 0
 	Public Const INDEX_REVISION1 As Integer = 1
 	Public Const INDEX_REVISION2 As Integer = 2
-	Public Const INDEX_OPTION As Integer = 3
+	Public Const INDEX_OPTION    As Integer = 3
 
 	'Process'
-	Public Const PROCESS_SMT As String = "SMT"
-	Public Const PROCESS_SMTBOTTOM As String = "SMT BOTTOM"
-	Public Const PROCESS_SMTHAND As String = "SMT HAND"
-	Public Const PROCESS_HANDFLOW As String = "HAND FLOW"
+	Public Const PROCESS_SMT          As String = "SMT"
+	Public Const PROCESS_SMTBOTTOM    As String = "SMT BOTTOM"
+	Public Const PROCESS_SMTHAND      As String = "SMT HAND"
+	Public Const PROCESS_HANDFLOW     As String = "HAND FLOW"
 	Public Const PROCESS_POSTASSEMBLY As String = "POST ASSEMBLY"
-	Public Const PROCESS_PCBBOARD As String = "PCB BOARD"
-	Public Const PROCESS_NOTUSED As String = "NOT USED"
-	Public Const PROCESS_BAS As String = "BAS"
+	Public Const PROCESS_PCBBOARD     As String = "PCB BOARD"
+	Public Const PROCESS_NOTUSED      As String = "NOT USED"
+	Public Const PROCESS_BAS          As String = "BAS"
 
 	'Table names
-	Public Const TABLE_ALPHABOM As String = "ALPHA_BOM"
-	Public Const TABLE_PCADBOM As String = "PCAD_BOM"
-	Public Const TABLE_QBBOM As String = "QB_BOM"
-	Public Const TABLE_QB_ITEMS As String = "QB_Items"
-	Public Const TABLE_TEMP_PCADBOM As String = "Temp_PCAD_BOM"
-	Public Const TABLE_ALPHA_ITEMS As String = "ALPHA_Items"
+	Public Const TABLE_ALPHABOM      As String = "ALPHA_BOM"
+	Public Const TABLE_PCADBOM       As String = "PCAD_BOM"
+	Public Const TABLE_QBBOM         As String = "QB_BOM"
+	Public Const TABLE_QB_ITEMS      As String = "QB_Items"
+	Public Const TABLE_TEMP_PCADBOM  As String = "Temp_PCAD_BOM"
+	Public Const TABLE_ALPHA_ITEMS   As String = "ALPHA_Items"
 	Public Const TABLE_MAGAZINE_DATA As String = "Magazine_Data"
-	Public Const TABLE_TEMP_PNP As String = "Temp_PNP"
+	Public Const TABLE_TEMP_PNP      As String = "Temp_PNP"
 	Public Const TABLE_ALPHA_PACKAGE As String = "ALPHA_Package"
-	Public Const TABLE_UTILITIES As String = "Utilities"
+	Public Const TABLE_UTILITIES     As String = "Utilities"
 
 	'Special Reference Designator
-	Public Const REFERENCE_DESIGNATOR_OPTION As String = "ZD"
+	Public Const REFERENCE_DESIGNATOR_OPTION   As String = "ZD"
 	Public Const REFERENCE_DESIGNATOR_FIDUCIAL As String = "ZF"
-	Public Const REFERENCE_DESIGNATOR_SWAP As String = "ZX"
+	Public Const REFERENCE_DESIGNATOR_SWAP     As String = "ZX"
 
 	'Special Prefixs
 	Public Const PREFIX_PCB As String = "PCB"
@@ -84,64 +85,89 @@ Public Module Variables
 	Public Const PREFIX_FGS As String = "FGS"
 
 	'Special SQL Returns
-	Public Const DOES_NOT_EXIST As String = "Does not exist"
+	Public Const DOES_NOT_EXIST  As String = "Does not exist"
 	Public Const NOT_IN_DATABASE As String = "NOT IN DATABASE"
 
 	'Extentions
-	Public Const ALPHA_EXE As String = "*.gen"
-	Public Const PCAD_EXE As String = "*.bom.csv"
-	Public Const QB_EXE As String = "*.csv"
-	Public Const QBITEMS_EXE = "*.csv"
+	Public Const ALPHA_EXE   As String = "*.gen"
+	Public Const PCAD_EXE    As String = "*.bom.csv"
+	Public Const QB_EXE      As String = "*.csv"
+	Public Const QBITEMS_EXE As String = "*.csv"
 	Public Const PNP_CSV_EXE As String = "*.pnp.csv"
-	Public Const PCB_EXE As String = "*.pcb"
-	Public Const SCH_EXE As String = "*.sch"
+	Public Const PCB_EXE     As String = "*.pcb"
+	Public Const SCH_EXE     As String = "*.sch"
 	Public Const SCH_PDF_EXE As String = "*.sch.pdf"
-	Public Const ZIP_EXE As String = "*.zip"
+	Public Const ZIP_EXE     As String = "*.zip"
 	Public Const REV_TXT_EXE As String = "*.rev.txt"
 
-	Public ODBC_ItemQuery As String = "SELECT " &
-										"[ParentRefFullName] As """ & DB_HEADER_ITEM_PREFIX & """, " &
-										"[Name] AS """ & DB_HEADER_ITEM_NUMBER & """," &
-										"[Type] AS """ & DB_HEADER_TYPE & """, " &
-										"[Description] AS """ & DB_HEADER_DESCRIPTION & """," &
-										"[PrefVendorRefFullName] AS """ & DB_HEADER_VENDOR & """, " &
-										"[ManufacturerPartNumber] AS """ & DB_HEADER_MPN & """," &
-										"[QuantityOnHand] AS """ & DB_HEADER_QUANTITY & """," &
-										"[PurchaseCost] AS """ & DB_HEADER_COST & """," &
-										"[CustomFieldLeadTimeWeeks] AS """ & DB_HEADER_LEAD_TIME & """, " &
-										"[CustomFieldMinimumOrderQTY] AS """ & DB_HEADER_MIN_ORDER_QTY & """," &
-										"[CustomFieldReOrderQTY] AS """ & DB_HEADER_REORDER_QTY & """, " &
-										"[CustomFieldManufacturer2] AS """ & DB_HEADER_VENDOR2 & """," &
-										"[CustomFieldPartNumber2] AS """ & DB_HEADER_MPN2 & """, " &
-										"[CustomFieldManufacturer3] AS """ & DB_HEADER_VENDOR3 & """," &
-										"[CustomFieldPartNumber3] AS """ & DB_HEADER_MPN3 & """" &
-										"From Item Where " &
-										"[IsActive] = 1 And " &
-										"[Type] <> 'ItemService' AND " &
-										"[Type] <> 'ItemNonInventory' AND " &
-										"[ParentRefFullName] <> ''"
+	'SMT Machines
+	Public Const NOTLOADED	   As String  = "Not Loaded"
+	Public Const NOTLOADED_NUM As Integer = 0
+	Public Const ALPHA         As String  = "ALPHA"
+	Public Const ALPHA_NUM     As Integer = 5603
+	Public Const GAMMA         As String  = "GAMMA"
+	Public Const GAMMA_NUM     As Integer = 5264
 
-	Public ODBC_AssemblyQuery As String = "SELECT " &
-										"[ParentRefFullName] AS """ & DB_HEADER_NAME_PREFIX & """," &
-										"[Name] As """ & DB_HEADER_NAME & """, " &
-										"{fn SUBSTRING([ItemInventoryAssemblyLnItemInventoryRefFullName], 1, {fn LOCATE(':',[ItemInventoryAssemblyLnItemInventoryRefFullName])} - 1 )} AS """ & DB_HEADER_ITEM_PREFIX & """, " &
-										"{fn SUBSTRING([ItemInventoryAssemblyLnItemInventoryRefFullName], {fn LOCATE(':',[ItemInventoryAssemblyLnItemInventoryRefFullName])} + 1, 1000)} AS """ & DB_HEADER_ITEM_NUMBER & """, " &
-										"[ItemInventoryAssemblyLNQuantity] AS """ & DB_HEADER_QUANTITY & """ " &
-										"FROM itemInventoryAssemblyLine " &
-										"WHERE " &
-										"[IsActive] = 1"
+	Public ODBC_ItemQuery As String = 
+"SELECT 
+  [ParentRefFullName]          As """ & DB_HEADER_ITEM_PREFIX   & """
+, [Name]                       AS """ & DB_HEADER_ITEM_NUMBER   & """
+, [Type]                       AS """ & DB_HEADER_TYPE          & """
+, [Description]                AS """ & DB_HEADER_DESCRIPTION   & """
+, [PrefVendorRefFullName]      AS """ & DB_HEADER_VENDOR        & """
+, [ManufacturerPartNumber]     AS """ & DB_HEADER_MPN           & """
+, [QuantityOnHand]             AS """ & DB_HEADER_QUANTITY      & """
+, [PurchaseCost]               AS """ & DB_HEADER_COST          & """
+, [CustomFieldLeadTimeWeeks]   AS """ & DB_HEADER_LEAD_TIME     & """
+, [CustomFieldMinimumOrderQTY] AS """ & DB_HEADER_MIN_ORDER_QTY & """
+, [CustomFieldReOrderQTY]      AS """ & DB_HEADER_REORDER_QTY   & """
+, [CustomFieldManufacturer2]   AS """ & DB_HEADER_VENDOR2       & """
+, [CustomFieldPartNumber2]     AS """ & DB_HEADER_MPN2          & """
+, [CustomFieldManufacturer3]   AS """ & DB_HEADER_VENDOR3       & """
+, [CustomFieldPartNumber3]     AS """ & DB_HEADER_MPN3          & """
+FROM Item WHERE
+    [IsActive] = 1 
+AND [Type] <> 'ItemService' 
+AND [Type] <> 'ItemNonInventory' 
+AND [ParentRefFullName] <> ''"
 
-	Public ODBC_LastModifiedQuery As String = "SELECT TimeModified FROM Item UNOPTIMIZED WHERE " &
-										"[IsActive] = 1 And " &
-										"[Type] <> 'ItemService' AND " &
-										"[Type] <> 'ItemNonInventory' AND " &
-										"[ParentRefFullName] <> '' ORDER BY TimeModified DESC"
+	Public ODBC_AssemblyQuery As String = 
+"SELECT " &
+"[ParentRefFullName] AS """ & DB_HEADER_NAME_PREFIX & """," &
+"[Name] As """ & DB_HEADER_NAME & """, " &
+"{fn SUBSTRING([ItemInventoryAssemblyLnItemInventoryRefFullName], 1, {fn LOCATE(':',[ItemInventoryAssemblyLnItemInventoryRefFullName])} - 1 )} AS """ & DB_HEADER_ITEM_PREFIX & """, " &
+"{fn SUBSTRING([ItemInventoryAssemblyLnItemInventoryRefFullName], {fn LOCATE(':',[ItemInventoryAssemblyLnItemInventoryRefFullName])} + 1, 1000)} AS """ & DB_HEADER_ITEM_NUMBER & """, " &
+"[ItemInventoryAssemblyLNQuantity] AS """ & DB_HEADER_QUANTITY & """ " &
+"FROM itemInventoryAssemblyLine " &
+"WHERE " &
+"[IsActive] = 1"
+
+	Public ODBC_LastModifiedQuery As String = 
+"SELECT TimeModified FROM Item UNOPTIMIZED WHERE " &
+"[IsActive] = 1 And " &
+"[Type] <> 'ItemService' AND " &
+"[Type] <> 'ItemNonInventory' AND " &
+"[ParentRefFullName] <> '' ORDER BY TimeModified DESC"
 
 #Region "Table Headers"
+	Public Const HEADER_NUMBER_OF_BOARDS As String = "# of Boards"
+	Public Const HEADER_ACTION As String = "Action"
+	Public Const HEADER_QUANTITY_WANT As String = "Want"
+	Public Const HEADER_ON_HAND As String = "# Avail"
+	Public Const HEADER_TO_BUILD As String = "# to Build"
+	Public Const HEADER_TO_BUY As String = "# to Buy"
+	Public Const HEADER_PER_BOARD As String = "# per Board"
+	Public Const HEADER_NEW As String = "New Addition"
+	Public Const HEADER_TOTAL_COST As String = "Total Cost"
+	Public Const HEADER_LEVEL As String = "Level"
+	Public Const HEADER_LEVEL_KEY As String = "Level Key"
+	Public Const HEADER_ASSEMBLY As String = "Assembly"
 	Public Const HEADER_REMAINDER As String = "Remainder"
 	Public Const HEADER_TOTAL As String = "Total"
+	Public Const HEADER_TIMES_PLACED As String = "Times Placed"
 	Public Const HEADER_QTY_PCAD As String = "PCAD quantity"
 	Public Const HEADER_QTY_QB As String = "QB quantity"
+	Public Const HEADER_QTY_ALPHA As String = "ALPHA quantity"
 	Public Const HEADER_QTY_ORIG As String = "Orig Qty"
 	Public Const HEADER_QTY_NEEDED As String = "Qty Needed"
 	Public Const HEADER_QTY_AVAIL As String = "Avail Qty"
@@ -268,49 +294,35 @@ Public Module Variables
 
 		'We need to set the dirty bit in the database because we could be preforming an import.
 		sqlapi.SetDirtyBit(1)
+		
 
-		Dim newInfo As FileInfo
-		Dim oldinfo As FileInfo
+		' check for only one file in the location
+		Dim fileEntries As String() = Directory.GetFiles(AlphaItemslocation, "*.mag")
+		Dim results As String = ""
 
-		'Check to see if we have a new file
-		If File.Exists("\\Server1\Shares\Production\AlphaBackup\mag.mag") Then
-			newInfo = New FileInfo("\\Server1\Shares\Production\AlphaBackup\mag.mag")
-		Else
-			'There is no file found in AlphaBackup so we cannot refresh the mag info.
-			MsgBox("Could not find file: \\Server1\Shares\Production\AlphaBackup\mag.mag")
+		If fileEntries.Count = 0 Then
+			MsgBox("No .mag files were found in [" & AlphaItemslocation & "]")
+			sqlapi.SetDirtyBit(0)
 			Return
 		End If
 
-		'Check to make sure that we have a mag file in our released location
-		If File.Exists(My.Settings.ReleaseLocation & "\ALPHAITEMS\mag.mag") Then
-			oldinfo = New FileInfo(My.Settings.ReleaseLocation & "\ALPHAITEMS\mag.mag")
-
-			If newInfo.LastWriteTime > oldinfo.LastWriteTime Then
-				'We need to replace the file in SERVER1 with the new file in AlphaBackup
-
-				File.Copy("\\Server1\Shares\Production\AlphaBackup\mag.mag", My.Settings.ReleaseLocation & "\ALPHAITEMS\mag.mag", True)
-			Else
-				'The file in SERVER1 is already the most up to date file.
-				MsgBox("The Mag info is already up to date.")
-				Return
-			End If
-		Else
-			'The SERVER1 file does not exist so we just need to copy the file over.
-			File.Copy("\\Server1\Shares\Production\AlphaBackup\mag.mag", My.Settings.ReleaseLocation & "\ALPHAITEMS\mag.mag", True)
-		End If
-
-		'Now we need to re-import the magazine information
-		Dim myCmd As New SqlCommand("", myConn)
-		myCmd.CommandText = "DELETE FROM " & TABLE_MAGAZINE_DATA
-		myCmd.ExecuteNonQuery()
-
+		Dim isFirst As Boolean = True
 		Dim form As New ImportData(Nothing)
-		Dim result As String = ""
-		If form.ImportALPHAmagazine(My.Settings.ReleaseLocation & "\ALPHAITEMS", "mag.mag", result) = False Then
-			MsgBox("Something happened while trying to update magizine information: " & result)
-		End If
 
-		File.Delete("\\Server1\Shares\Production\AlphaBackup\mag.mag")
+		' go through each mag file that we have
+		For Each filepath In fileEntries
+			Dim fileinfo As New FileInfo(filepath)
+
+			form.ImportSMTMagazine(filepath, isFirst, results)
+
+			If results.Length <> 0 Then
+				MsgBox("Error:" & vbNewLine & "    " & results & vbNewLine)
+			End If
+
+			isFirst = False
+		Next
+
+		sqlapi.SetDirtyBit(0)
 
 		MsgBox("Magizine information has been updated. Generate your report again for a more accurate result.")
 	End Sub
